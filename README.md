@@ -40,7 +40,7 @@ java -cp ddb-sample-tool-0.1.0-jar-with-dependencies.jar com.amitgaur.aws.ddb.to
 - maxCons : Max number of http connections
 - region1 and table1 : region end point and table name for first table
 - region2 and table2 : region end point and table name for second table
-- 
+
 ### Logs
 Logs are created in the logs directory in a file called application.log
 
