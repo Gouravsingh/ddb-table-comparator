@@ -1,5 +1,5 @@
 # Table Comparator
-This is a sample library that does a deep compare to  2 dynamodb tables
+This is a sample library that does a deep compare of  2 dynamodb tables
 Utilizes the Parallel Scan API
 
 - The tool assumes some defaults for parallel scan operations but they can be configured from the command (see options below) 

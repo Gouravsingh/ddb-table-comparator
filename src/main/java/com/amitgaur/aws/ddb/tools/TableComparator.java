@@ -58,7 +58,7 @@ public class TableComparator {
             LOGGER.error("Tables dont exist, please verify your arguments and make sure tables exist");
             System.exit(1);
         }
-        if (result1.getTable().getItemCount() != result2.getTable().getItemCount() || result1.getTable().getTableSizeBytes()!= result2.getTable().getTableSizeBytes()){
+        if (!result1.getTable().getItemCount().equals(result2.getTable().getItemCount()) || !result1.getTable().getTableSizeBytes().equals(result2.getTable().getTableSizeBytes())){
             LOGGER.error("Mismatch in meta data on item size or item bytes table1 : " + result1.getTable().getItemCount() + result1.getTable().getTableSizeBytes()  + " table2 : " + result2.getTable().getItemCount() + result2.getTable().getTableSizeBytes());
 
         } else {
@@ -66,6 +66,7 @@ public class TableComparator {
         }
         int concurrentTasks = configuration.concurrentTaskNum;
         ExecutorService service = Executors.newFixedThreadPool(concurrentTasks);
+
         CompletionService<TableCompareResult> taskCompletionService =
                 new ExecutorCompletionService<>(service);
 
@@ -88,6 +89,10 @@ public class TableComparator {
 
 
                 tableCompareResult = result.get();
+                if (!tableCompareResult.numCompares.equals(tableCompareResult.equals)){
+                    LOGGER.error("Tables dont match");
+                    service.shutdownNow();
+                }
                 numCompares.getAndAdd(tableCompareResult.numCompares);
                 equalCount.getAndAdd(tableCompareResult.equals);
                 notEqualCount.getAndAdd(tableCompareResult.notEquals);
@@ -105,10 +110,21 @@ public class TableComparator {
 
         }
         service.shutdownNow();
+        try {
+            service.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+        } catch (InterruptedException e) {
+            LOGGER.info("Interrupted exception here");
+        }
+
         LOGGER.info("Final Result Number of items compared " + numCompares + " equals" + equalCount + " notEq" + notEqualCount  );
         if (equalCount.longValue()!=numCompares.longValue()){
-            LOGGER.info("Items dont match between the 2 tables");
+            LOGGER.info("FAILED!!! Items dont match between the 2 tables");
         }
+        else{
+            LOGGER.info("Tables match!! Success!!");
+        }
+
+
 
     }
 
@@ -180,9 +196,7 @@ public class TableComparator {
              * connect to AWS to execute a request and will throw an
              * AmazonClientException.
              */
-            if (ace.isRetryable()){
 
-            }
             LOGGER.error("Error Message: " + ace.getMessage());
         }
 

@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -90,6 +91,7 @@ public class CompareScanTask implements Callable<TableCompareResult> {
                         } else {
                             notEquals.getAndAdd(1);
                             LOGGER.error("Retrieved items that are not equal in parallel scan: this should not be possible if table matches ");
+                            terminate(parallelSegmentService);
                             break;
                         }
 
@@ -116,6 +118,7 @@ public class CompareScanTask implements Callable<TableCompareResult> {
             LOGGER.error("Error", e);
         }
         LOGGER.info("done task with thread equals : " + equals + " not equals " + notEquals);
+        terminate(parallelSegmentService);
         TableCompareResult result =  new TableCompareResult();
 
         result.numCompares = numCompares.longValue();
@@ -123,6 +126,16 @@ public class CompareScanTask implements Callable<TableCompareResult> {
         result.notEquals = notEquals.longValue();
 
         return result;
+    }
+
+    private void terminate(ExecutorService parallelSegmentService) {
+        parallelSegmentService.shutdownNow();
+        try{
+            parallelSegmentService.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+        }
+        catch(InterruptedException e){
+
+        }
     }
 
     private static <K, V> boolean compareItems(Map<K, V> one, Map<K, V> two) {
